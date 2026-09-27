@@ -1,0 +1,43 @@
+{
+  "name": "cardano-x402-sponsor",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Seller-sponsored network fees for x402 exact payments on Cardano: a buyer holding only a stablecoin pays; the seller's net cost is the fee. Prototype, preprod only",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Vincent <loveaihqhq@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loveaihq/cardano-x402-sponsor.git"
+  },
+  "homepage": "https://github.com/loveaihq/cardano-x402-sponsor#readme",
+  "bugs": "https://github.com/loveaihq/cardano-x402-sponsor/issues",
+  "keywords": [
+    "cardano",
+    "x402",
+    "fee-sponsorship",
+    "stablecoin",
+    "payments"
+  ],
+  "scripts": {
+    "test": "node --test --import tsx test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "feasibility": "tsx spike/feasibility.ts",
+    "fund": "tsx spike/fund.ts",
+    "e2e": "tsx spike/e2e.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@evolution-sdk/evolution": "0.5.14",
+    "@x402/cardano": "2.27.0",
+    "@x402/core": "2.27.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "@x402/fetch": "2.27.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
