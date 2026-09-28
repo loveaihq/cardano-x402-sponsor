@@ -39,6 +39,7 @@ mainnet, and nothing here has been audited.
 | Path | What |
 |---|---|
 | [`DESIGN.md`](DESIGN.md) | the design: wire format, the flow against `@x402/core` hooks, the seller's checks S1–S9, the facilitator's F1–F3 |
+| [`specs/extensions/fee_sponsor_cardano.md`](specs/extensions/fee_sponsor_cardano.md) | the offer written up as an x402 extension spec: a draft, not yet proposed upstream |
 | `src/offer.ts` | the offer in `PaymentRequirements.extra.feeSponsor` and its checks |
 | `src/rules.ts` | S1–S9 over a decoded transaction; fee-floor arithmetic |
 | `src/pool.ts` | the sponsor key's UTxOs: soft offers, exclusive bindings |
