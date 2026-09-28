@@ -133,7 +133,19 @@ sponsorship rules run.
 
 ## 7. Tests
 
-39 chain-free tests (`npm test`): the rules S1–S9 on real-signed offline transactions, the pool,
+41 chain-free tests (`npm test`): the rules S1–S9 on real-signed offline transactions, the pool,
 the server's offers, binding, witness and cancellation, the facilitator's F1–F3 over
-`@x402/cardano`'s own verification, and the client scheme's release hook. `npm run typecheck` is
-clean.
+`@x402/cardano`'s own verification, the client scheme's release hook, and the signer's C6.
+`npm run typecheck` is clean.
+
+## 8. After milestone 1: the buyer checks the offer (C6)
+
+Found on 2026-09-28, while bringing sponsorship to a wallet. At `3b251f6` the signer trusted the
+offer's fields: a seller could name one of the buyer's own UTxOs as the sponsor's, and the
+buyer's own signature would then spend it, its ADA going to the seller. This was confirmed on
+preprod, with this project's own test accounts.
+
+The fix is C6 (DESIGN.md section 5). The signer reads the offered UTxO through the wallet's
+provider, `offerOnChainProblem` in `src/offer.ts` checks it against the offer and the buyer's
+key, and the signer builds with the UTxO it read, not with the offer's fields. Two chain-free
+tests cover it.

@@ -6,16 +6,17 @@ import {
   Assets,
   Transaction,
   TransactionHash,
+  TransactionInput,
   TransactionWitnessSet,
   UTxO,
   type Client,
 } from "@evolution-sdk/evolution";
 import { ExactCardanoScheme, parseAssetUnit, parseUtxoRef, type ClientCardanoSignInput, type ClientCardanoSignResult, type ClientCardanoSigner } from "@x402/cardano";
 import type { PaymentPayloadContext, PaymentPayloadResult, PaymentRequirements, SchemeClientHooks, SchemeNetworkClient } from "@x402/core/types";
-import { offerIn, offerProblem, type FeeSponsorOffer } from "./offer.ts";
+import { keyHashOf, offerIn, offerOnChainProblem, offerProblem, type FeeSponsorOffer } from "./offer.ts";
 
 /** What the signer needs from the buyer's wallet; an evolution-sdk seed client has it. */
-export type BuyerWallet = Pick<Client.SigningClient, "address" | "getWalletUtxos" | "newTx">;
+export type BuyerWallet = Pick<Client.SigningClient, "address" | "getWalletUtxos" | "getUtxosByOutRef" | "newTx">;
 
 export interface SponsoredClientSignerConfig {
   wallet: BuyerWallet;
@@ -67,7 +68,7 @@ export function toSponsoredClientSigner(cfg: SponsoredClientSignerConfig): Spons
     return [...(await cfg.wallet.getWalletUtxos())].filter((u) => !spent.has(refOf(u)));
   };
 
-  async function sponsored(input: ClientCardanoSignInput, offer: FeeSponsorOffer): Promise<ClientCardanoSignResult> {
+  async function sponsored(input: ClientCardanoSignInput, offer: FeeSponsorOffer, sponsorUtxo: UTxO.UTxO): Promise<ClientCardanoSignResult> {
     const { policyId, assetNameHex } = parseAssetUnit(input.asset);
     const unit = policyId + assetNameHex;
     const amount = BigInt(input.amount);
@@ -94,13 +95,6 @@ export function toSponsoredClientSigner(cfg: SponsoredClientSignerConfig): Spons
       await sleep(5_000);
     }
 
-    const { txHash, index } = parseUtxoRef(offer.input);
-    const sponsorUtxo = new UTxO.UTxO({
-      transactionId: TransactionHash.fromHex(txHash),
-      index: BigInt(index),
-      address: Address.fromBech32(offer.address),
-      assets: Assets.fromLovelace(BigInt(offer.lovelace)),
-    });
     const brought = inputs.reduce((s, u) => Assets.merge(s, u.assets), Assets.zero);
     const change = Assets.subtract(brought, Assets.fromHexStrings(policyId, assetNameHex, amount, 0n));
     const ttl = BigInt(Math.min(Date.now() + input.maxTimeoutSeconds * 1000, Number(offer.expiresAt)));
@@ -164,8 +158,17 @@ export function toSponsoredClientSigner(cfg: SponsoredClientSignerConfig): Spons
       if (method !== "default") return plainOr(input, `transfer method ${String(method)}`);
       const problem = offerProblem(offer, input.network, Date.now()); // C1, C2
       if (problem) return plainOr(input, problem);
+      let onChain: UTxO.UTxO | undefined;
       try {
-        return await sponsored(input, offer);
+        const { txHash, index } = parseUtxoRef(offer.input);
+        [onChain] = await cfg.wallet.getUtxosByOutRef([new TransactionInput.TransactionInput({ transactionId: TransactionHash.fromHex(txHash), index: BigInt(index) })]);
+      } catch (e) {
+        return plainOr(input, `the offered UTxO could not be read: ${(e as Error).message}`);
+      }
+      const wrong = offerOnChainProblem(offer, onChain, keyHashOf(await cfg.wallet.address()) ?? ""); // C6
+      if (wrong) return plainOr(input, wrong);
+      try {
+        return await sponsored(input, offer, onChain!);
       } catch (e) {
         return plainOr(input, `sponsored build failed: ${(e as Error).message}`); // C5
       }

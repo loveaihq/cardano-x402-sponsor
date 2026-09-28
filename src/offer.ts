@@ -1,6 +1,6 @@
 // The seller's fee-sponsorship offer (DESIGN.md section 3): its wire shape in an accept's
 // `extra`, and the checks every role runs on it before relying on it.
-import { Address, KeyHash } from "@evolution-sdk/evolution";
+import { Address, Assets, KeyHash, type UTxO } from "@evolution-sdk/evolution";
 import { getCardanoNetworkId } from "@x402/cardano";
 
 /** Key of the offer in `PaymentRequirements.extra`. */
@@ -81,4 +81,24 @@ export function offerKeyHash(offer: Pick<FeeSponsorOffer, "address">, network: s
 /** The payment key hash of an address, lowercase hex, or undefined for a script credential. */
 export function keyHashOf(a: Address.Address): string | undefined {
   return a.paymentCredential instanceof KeyHash.KeyHash ? KeyHash.toHex(a.paymentCredential).toLowerCase() : undefined;
+}
+
+/**
+ * C6: why the buyer must not build with `offer`, given what the chain holds at `offer.input`
+ * (undefined when it holds nothing there), or undefined when it may. The offer's address never
+ * enters the transaction: the ledger asks for the witness of the UTxO's real owner. So an offer
+ * naming one of the buyer's own UTxOs, under any address, has the buyer's own signature spend it,
+ * and its ADA goes to `payTo` as the sponsor's would. The buyer reads the UTxO itself.
+ */
+export function offerOnChainProblem(offer: FeeSponsorOffer, onChain: UTxO.UTxO | undefined, buyerKeyHash: string): string | undefined {
+  if (!onChain) return "the offered UTxO is not on chain";
+  const owner = keyHashOf(onChain.address);
+  if (owner === buyerKeyHash.toLowerCase()) return "the offered UTxO is this wallet's own";
+  if (Address.toBech32(onChain.address) !== offer.address) return "the offered UTxO is at another address than the offer names";
+  if (!owner) return "the offered UTxO is not at a key";
+  if (!Assets.hasOnlyLovelace(onChain.assets)) return "the offered UTxO holds tokens";
+  if (Assets.lovelaceOf(onChain.assets) !== BigInt(offer.lovelace)) return `the offered UTxO holds ${Assets.lovelaceOf(onChain.assets)} lovelace, not the ${offer.lovelace} offered`;
+  // Spending it would add the reference-script fee, which a fee built from the offer leaves out.
+  if (onChain.scriptRef) return "the offered UTxO carries a reference script";
+  return undefined;
 }

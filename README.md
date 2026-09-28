@@ -29,6 +29,10 @@ mainnet, and nothing here has been audited.
 - A plain `@x402/cardano` client paid the same 402 the usual way, and the offer went unused.
 - Transactions that try to divert the sponsor's ADA, spend another sponsor UTxO, put up
   collateral, underpay the fee or outlive the offer were all refused, and none landed.
+- **Found afterwards (2026-09-28): the buyer must check the offer against the chain.** At
+  `3b251f6` the signer trusted the offer's fields, and a seller could have named one of the
+  buyer's own UTxOs as the sponsor's. The signer now reads the offered UTxO itself and refuses one
+  that is the buyer's or does not match the offer (DESIGN.md C6, RESULTS.md section 8).
 
 ## What is here
 
@@ -42,7 +46,7 @@ mainnet, and nothing here has been audited.
 | `src/facilitator.ts` | `SponsoredExactCardanoFacilitator`, `@x402/cardano`'s facilitator plus witness merging |
 | `src/client.ts` | `toSponsoredClientSigner` and `SponsoredExactCardanoClient` for buyers |
 | `spike/` | the preprod runs (`feasibility.ts`, `fund.ts`, `e2e.ts`) and two read-only helpers (`inspect.ts`, `cborsize.ts`) |
-| `test/` | 39 chain-free tests on real-signed offline transactions |
+| `test/` | 41 chain-free tests on real-signed offline transactions |
 
 ## Running it
 
@@ -73,8 +77,9 @@ npm run e2e -- report
 - `@x402/fetch` retries a failed payment with the first 402, so a buyer whose offer was taken asks
   again to get a fresh one.
 - The pool and its bindings live in memory, for one server process.
-- Channel openings for `batch-settlement` ([subbit-x402](https://github.com/loveaihq/subbit-x402))
-  are the next step, sketched in DESIGN.md section 13.
+- Channel openings for `batch-settlement` are sponsored in
+  [subbit-x402](https://github.com/loveaihq/subbit-x402) (its step 16 and SPONSORSHIP.md), which
+  carries this offer and pool over. DESIGN.md section 13 was the sketch.
 
 ## License
 

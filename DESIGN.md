@@ -161,10 +161,18 @@ Client rules:
   for the buyer's change: bumping it would take the sponsor's ADA, which S4 refuses.
 - **C5** If the build fails (buyer change under its min-UTxO, fee over `maxFee`), pay the plain way
   if the wallet can, else fail.
+- **C6** Before building, read `feeSponsor.input` from the chain, and pay the plain way unless the
+  chain holds an ADA-only UTxO there, at exactly `feeSponsor.address`, with exactly
+  `feeSponsor.lovelace`, and not at the buyer's payment key. Build with the UTxO the chain returned.
 
-The client risks nothing by trusting the offer. Its signature covers a body that pays exactly
-`amount` to `payTo` and returns everything else of its own to itself. If the offer lies about
-the sponsor UTxO, the body does not balance and the ledger refuses it.
+C6 was missing from milestone 1, which said the client risked nothing by trusting the offer. It
+did. The buyer's signature covers a body that pays `amount` to `payTo` and returns the buyer's own
+inputs to itself, but the offer's address never enters that body: the ledger asks for the witness
+of the UTxO's real owner. So an offer naming one of the buyer's own UTxOs, with its true lovelace
+under any address, makes a body that balances and needs no witness but the buyer's. That UTxO's
+ADA then goes to `payTo` as the sponsor's would. It was confirmed on preprod (RESULTS.md
+section 8). Only a lie about the lovelace, or a UTxO that holds tokens, leaves the body unbalanced
+for the ledger to refuse.
 
 ## 6. What the seller checks before signing
 
@@ -244,6 +252,9 @@ reusable.
   seller.
 - **What S4 does not cover.** It bounds lovelace, not tokens. The sponsor UTxO is ADA-only, so it
   has no tokens to divert.
+- **An offer is the seller's claim, not a fact.** The buyer checks it against the chain (C6). An
+  offer that named the buyer's own UTxO would otherwise have the buyer's own signature pay that
+  UTxO's ADA to the seller.
 
 ## 11. Costs (measured on preprod)
 
