@@ -84,6 +84,10 @@ npm run e2e -- report
 - Channel openings for `batch-settlement` are sponsored in
   [subbit-x402](https://github.com/loveaihq/subbit-x402) (its step 16 and SPONSORSHIP.md), which
   carries this offer and pool over. DESIGN.md section 13 was the sketch.
+- After the Dijkstra hard fork, CIP-118's nested transactions could sponsor an `exact` payment or a
+  channel opening without this construction, since neither runs a script. They cannot sponsor a
+  step that runs Subbit's PlutusV3 validator (a top-up, a refund, a claim): those still need the
+  seller's input in the same transaction. DESIGN.md section 12 has the reasoning.
 
 ## License
 

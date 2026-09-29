@@ -282,9 +282,22 @@ reusable.
 - **Two round trips** (the facilitator builds, the client signs): no reservation needed, but it
   breaks x402's single paid retry.
 - **Wait for CIP-118 nested transactions (Babel fees).** The Dijkstra hard fork is expected
-  between December 2026 and March 2027. Even then, a transaction with sub-transactions cannot run
-  PlutusV1–V3 scripts, so channel transactions (Subbit's validator is PlutusV3) still need
-  co-signing. The offer and its rules (sections 3, 6, 8) stay the same if the construction later
+  between December 2026 and March 2027. CIP-118 (read on 2026-09-29, at `61b21c8` of
+  cardano-foundation/CIPs; status Proposed) lets a buyer sign a sub-transaction that is short of
+  ADA and leave the fee and min-UTxO to whoever wraps it in the top-level transaction. What that
+  covers here depends on whether the step runs a script:
+  - An `exact` payment and a channel opening run no script. Either can be a sub-transaction, and
+    a seller or facilitator can pay its fee in the top-level one. After Dijkstra that could replace
+    this repository's construction for them, with no offer UTxO in the 402 and nothing for the
+    buyer to check against the chain (C6).
+  - A top-up, refund, claim, close or elapse spends the channel, so it runs Subbit's validator,
+    which is PlutusV3. A sub-transaction cannot run PlutusV3 or earlier scripts. A top-level
+    transaction can, in the CIP's "special mode" for PlutusV1–V3, but then it "will have to balance
+    out by itself": no sub-transaction can pay its fee. So these steps still need the seller's ADA
+    as an input of the same transaction, co-signed, as here, unless Subbit's validator is rebuilt
+    as PlutusV4, which is a new script hash and its author's decision.
+
+  The offer and its rules (sections 3, 6, 8) stay the same if the `exact` construction later
   moves to a sub-transaction.
 
 ## 13. Next: channel openings (milestone 2, sketch)
