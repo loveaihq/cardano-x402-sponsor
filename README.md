@@ -57,6 +57,9 @@ npm test
 npm run typecheck
 ```
 
+Node 22 or newer. CI (`.github/workflows/ci.yml`) runs both on Linux, macOS and Windows, each on
+Node 22 and 24.
+
 The preprod runs need `BLOCKFROST_PROJECT_ID` and `WALLET_MNEMONIC` in the environment. They use
 the public "abandon … art" test mnemonic: accounts 0 and 3 fund the others, 1 is the seller, 5
 and 7 the buyers, 6 the sponsor key.

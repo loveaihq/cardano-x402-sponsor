@@ -27,7 +27,7 @@
     "e2e": "tsx spike/e2e.ts"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {
     "@evolution-sdk/evolution": "0.5.14",
